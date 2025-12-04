@@ -317,3 +317,96 @@ nav{
 
 .sr{ position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
 canvas#grid{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block}
+
+/* 分页容器 */
+.pagination {
+  margin: 40px auto;
+  text-align: center;
+  position: relative;
+  z-index: 10; /* 确保在背景之上 */
+}
+
+/* 复用博客卡片的基础样式 */
+.pagination-btn,
+.pagination-ellipsis {
+  /* 复用博客卡片的背景和边框样式 */
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: var(--card-glow);
+  color: rgba(231,238,252,0.9);
+  
+  /* 保持正方形和居中 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 4px;
+  border-radius: 10px; /* 与博客卡片相似的圆角 */
+  font-size: 14px;
+  transition: all 0.28s cubic-bezier(.2,.9,.2,1);
+}
+
+/* 页码按钮特有样式 */
+.pagination-btn {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  /* 边框渐变效果（与博客卡片统一） */
+  border: double 1px transparent;
+  background-image: 
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+    linear-gradient(90deg, hsl(0 90% 60%), hsl(0 80% 50%));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* 上一页/下一页按钮文字 */
+.pagination-prev {
+  content: "上一页";
+}
+
+.pagination-next {
+  content: "下一页";
+}
+
+/* 调整上一页/下一页按钮宽度（适应文字） */
+.pagination-prev,
+.pagination-next {
+  width: auto;
+  padding: 0 12px;
+}
+
+/* 鼠标悬停效果（与博客卡片统一） */
+.pagination-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.6);
+}
+
+/* 修改 style.css 中的分页按钮选中状态 */
+.pagination-btn.active {
+  /* 更醒目的背景渐变（与主题色呼应） */
+  background-image: 
+    linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.1)),
+    linear-gradient(90deg, var(--accent3), var(--accent1)); /* 用黄色到粉色的渐变增强对比 */
+  
+  /* 选中态放大+上浮效果 */
+  transform: translateY(-6px) scale(1.08);
+  
+  /* 更强的发光效果 */
+  box-shadow: 0 8px 24px rgba(255, 211, 0, 0.2), 0 0 12px rgba(255, 45, 149, 0.15);
+  
+  /* 文字颜色更亮 */
+  color: #ffffff;
+  font-weight: 700;
+  
+  /* 边框强化 */
+  border: double 1.5px transparent;
+  z-index: 20; /* 确保在其他按钮上方 */
+}
+
+/* 修复悬停状态与选中状态的层级关系 */
+.pagination-btn.active:hover {
+  transform: translateY(-6px) scale(1.08); /* 保持选中态的放大效果 */
+  box-shadow: 0 12px 30px rgba(255, 211, 0, 0.25), 0 0 18px rgba(255, 45, 149, 0.2);
+}
