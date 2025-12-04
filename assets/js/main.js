@@ -8,9 +8,19 @@
     const b1 = Math.sin(t + 2.2) * 60 + 180;
     root.style.setProperty('--accent1', `rgb(${Math.floor(r1)},${Math.floor(g1)},${Math.floor(b1)})`);
     const hue = Math.floor((t * 40) % 360);
+    // 博客卡片边框动画
     document.querySelectorAll('.post').forEach((p,i)=>{
       p.style.borderImage = `linear-gradient(90deg, hsl(${(hue + i*20)%360} 90% 60%), hsl(${(hue + i*40)%360} 80% 50%)) 1`;
     });
+  
+    // 新增：分页按钮边框动画（与博客卡片保持一致）
+    document.querySelectorAll('.pagination-btn:not(.disabled)').forEach((btn,i)=>{
+      btn.style.backgroundImage = `
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+        linear-gradient(90deg, hsl(${(hue + i*10)%360} 90% 60%), hsl(${(hue + i*30)%360} 80% 50%))
+      `;
+    });
+    
     requestAnimationFrame(loop);
   }
   loop();
@@ -94,26 +104,115 @@ function draw(t){
 
 requestAnimationFrame(draw);
 
+
+// 全局变量存储所有博客数据和分页状态
+let allPosts = []; // 存储所有博客HTML
+let currentPage = 1; // 当前页码
+const postsPerPage = 6; // 每页最多6个
+
 async function loadBlogPosts() {
   const container = document.getElementById('posts-container');
   if (!container) return;
 
   try {
+    // 1. 先加载博客索引，获取所有文件名
     const indexResponse = await fetch('posts/index.json');
     if (!indexResponse.ok) throw new Error('无法获取博客列表');
-    
-    const postFileNames = await indexResponse.json(); 
+    const postFileNames = await indexResponse.json();
 
+    // 2. 加载所有博客内容，暂存到 allPosts 数组
+    allPosts = []; // 清空旧数据
     for (const fileName of postFileNames) {
       const postResponse = await fetch(`posts/${fileName}`);
-      if (!postResponse.ok) throw new Error(`加载 ${fileName} 失败`);
-      
-      const postHtml = await postResponse.text();
-      container.innerHTML += postHtml;
+      if (postResponse.ok) {
+        allPosts.push(await postResponse.text());
+      }
     }
+
+    // 3. 初始化第一页内容和分页按钮
+    renderPage(1);
+
   } catch (error) {
     console.error('加载博客失败:', error);
+    container.innerHTML = '<p>加载博客时出错，请稍后再试</p>';
   }
 }
 
+// 渲染指定页码的博客内容
+function renderPage(pageNum) {
+  const container = document.getElementById('posts-container');
+  // 计算当前页的博客范围（数组索引）
+  const startIndex = (pageNum - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPosts = allPosts.slice(startIndex, endIndex); // 截取当前页的博客
+
+  // 清空容器并添加当前页的博客
+  container.innerHTML = currentPosts.join('');
+
+  // 更新当前页码并重新生成分页按钮
+  currentPage = pageNum;
+  renderPagination();
+}
+
+// 生成分页按钮（含上一页/下一页和精简显示）
+function renderPagination() {
+  const paginationContainer = document.getElementById('pagination');
+  const totalPages = Math.ceil(allPosts.length / postsPerPage);
+  if (totalPages <= 1) {
+    paginationContainer.innerHTML = ''; // 只有1页时不显示分页
+    return;
+  }
+
+  paginationContainer.innerHTML = ''; // 清空旧内容
+
+  // 1. 添加“上一页”按钮（文字替换箭头）
+  const prevBtn = document.createElement('span');
+  prevBtn.className = `pagination-btn pagination-prev ${currentPage === 1 ? 'disabled' : ''}`;
+  prevBtn.textContent = '上一页'; // 改为文字显示
+  prevBtn.disabled = currentPage === 1; // 第一页时禁用
+  prevBtn.addEventListener('click', () => {
+    if (currentPage > 1) renderPage(currentPage - 1);
+  });
+  paginationContainer.appendChild(prevBtn);
+
+  // 2. 生成页码（只显示当前页附近的页码，避免过多）
+  const visibleRange = 2; // 当前页前后显示2个页码
+  for (let i = 1; i <= totalPages; i++) {
+    // 始终显示第一页、最后一页，以及当前页附近的页码
+    if (
+      i === 1 || 
+      i === totalPages || 
+      (i >= currentPage - visibleRange && i <= currentPage + visibleRange)
+    ) {
+      // 显示正常页码
+      const btn = document.createElement('span');
+      btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+      btn.textContent = i;
+      btn.addEventListener('click', () => renderPage(i));
+      paginationContainer.appendChild(btn);
+    } else if (
+      // 只在需要时显示省略号（避免连续省略）
+      (i === currentPage - visibleRange - 1 && currentPage - visibleRange > 2) ||
+      (i === currentPage + visibleRange + 1 && currentPage + visibleRange < totalPages - 1)
+    ) {
+      // 显示省略号（不可点击）
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis';
+      ellipsis.textContent = '...';
+      paginationContainer.appendChild(ellipsis);
+    }
+  }
+
+  // 3. 添加“下一页”按钮（文字替换箭头）
+  const nextBtn = document.createElement('span');
+  nextBtn.className = `pagination-btn pagination-next ${currentPage === totalPages ? 'disabled' : ''}`;
+  nextBtn.textContent = '下一页'; // 改为文字显示
+  nextBtn.disabled = currentPage === totalPages; // 最后一页时禁用
+  nextBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) renderPage(currentPage + 1);
+  });
+  paginationContainer.appendChild(nextBtn);
+}
+
+// 页面加载完成后执行
 window.addEventListener('DOMContentLoaded', loadBlogPosts);
